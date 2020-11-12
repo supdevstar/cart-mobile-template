@@ -1,0 +1,976 @@
+swagger: "2.0"
+consumes:
+  - application/json
+produces:
+  - application/json
+schemes:
+  - http
+  - https
+info:
+  description: The purpose of this application is to operate over catalog models
+  title: Rockspoon Catalog Microservice
+  version: 0.0.1
+host: dev-api.rockspoon.io
+basePath: /catalog
+paths:
+  /consumer/item/{itemId}:
+    get:
+      description: Gets a menu item by ID
+      summary: Gets a menu item
+      consumes:
+        - application/json
+      produces:
+        - application/json
+      tags:
+        - Item
+      parameters:
+        - type: string
+          description: Item ID
+          name: itemId
+          in: path
+          required: true
+      responses:
+        "200":
+          description: Found Item
+          schema:
+            $ref: "#/definitions/ItemConsumerResponse"
+        "400":
+          description: Bad Request
+        "500":
+          description: Internal server error
+  /consumer/item/{itemId}/modifier:
+    get:
+      description: Gets a menu item modifiers by ID
+      summary: Gets a menu item modifiers
+      consumes:
+        - application/json
+      produces:
+        - application/json
+      tags:
+        - Item
+      parameters:
+        - type: string
+          description: Item ID
+          name: itemId
+          in: path
+          required: true
+      responses:
+        "200":
+          description: Found Item Modifiers
+          schema:
+            $ref: "#/definitions/ItemModifiersConsumerResponse"
+        "400":
+          description: Bad Request
+        "500":
+          description: Internal server error
+
+######################################################## MODELS #########################################################################
+
+definitions:
+  ItemModifiersConsumerResponse:
+    description:  ItemModifiersConsumerResponse is the response for item modifiers
+    x-nullable: false
+    type: object
+    properties:
+      modifiers:
+        type: array
+        items:
+          $ref: "#/definitions/ListItemModifierResponse"
+  ListItemModifierResponse:
+    description: The response form list modifiers
+    type: object
+    x-nullable: false
+    required:
+      - id
+      - type
+      - title
+      - titleForCustomers
+      - index
+      - maxModifiers
+      - itemModifier
+      - options
+    properties:
+      id:
+        type: string
+        x-nullable: false
+      type:
+        $ref: "#/definitions/ModifierType"
+        x-nullable: false
+      title:
+        type: string
+        x-nullable: false
+      titleForCustomers:
+        type: string
+        x-nullable: false
+      index:
+        type: integer
+        format: int8
+        x-nullable: false
+      maxModifiers:
+        type: integer
+        format: int8
+        x-nullable: false
+      itemModifier:
+        $ref: "#/definitions/ItemModifierResponse"
+        x-nullable: false
+      options:
+        type: array
+        items:
+          $ref: "#/definitions/ItemModifierOptionsResponse"
+  AlcoholicAttributesResponse:
+    description: AlcoholicAttributesResponse is the response for alcoholic item attributes
+    type: object
+    x-nullable: false
+    required:
+      - alcoholByVolume
+      - vintage
+      - age
+    properties:
+      age:
+        type: integer
+        format: int64
+        x-nullable: false
+        example: 12
+      alcoholByVolume:
+        type: number
+        format: double
+        x-nullable: false
+        example: 12
+      vintage:
+        type: integer
+        format: int64
+        x-nullable: false
+        example: 1999
+      type:
+        type: string
+        example: "tea"
+      subType:
+        type: string
+        example: "cold"
+      flavor:
+        type: string
+        example: "sweet"
+      style:
+        type: string
+        example: dry
+      madeOf:
+        type: string
+        example: "leafs of a random tree"
+      series:
+        type: string
+      package:
+        $ref: "#/definitions/PackageResponse"
+      grape:
+        type: array
+        items:
+          $ref: "#/definitions/GrapeResponse"
+  BeverageAttributesResponse:
+    description: BeverageAttributesResponse is the response for beverage item
+    type: object
+    x-nullable: false
+    properties:
+      freeRefill:
+        type: boolean
+        example: false
+      type:
+        type: string
+        example: "softdrink"
+      roasting:
+        type: string
+        example: "rosted"
+  AvailabilityResponse:
+    type: object
+    x-nullable: false
+    title: AvailabilityResponse is the availability of an item.
+    required:
+      - daysOfWeek
+      - periods
+    properties:
+      daysOfWeek:
+        type: array
+        items:
+          $ref: "#/definitions/Weekday"
+      periods:
+        type: array
+        items:
+          $ref: "#/definitions/PeriodResponse"
+  GroceryAttributesResponse:
+    description: GroceryAttributesResponse is the response for grocery items
+    type: object
+    properties:
+      measure:
+        $ref: "#/definitions/Measure"
+      price:
+        $ref: "#/definitions/Money"
+      isDelivery:
+        type: boolean
+        example: false
+      isStore:
+        type: boolean
+        example: true
+      quantityStep:
+        $ref: "#/definitions/QuantityStep"
+  Currency:
+    type: object
+    title: Currency is a currency of the Money.
+    properties:
+      decimal:
+        type: integer
+        format: int8
+        example: 10
+      symbol:
+        $ref: "#/definitions/CurrencySymbol"
+      type:
+        $ref: "#/definitions/CurrencyType"
+  CurrencySymbol:
+    type: string
+    example: $
+  CurrencyType:
+    type: string
+    example: USD
+  Facet:
+    description: Facet represents a role that an item can assume
+    type: string
+    enum:
+      - menu
+      - prepped_food
+      - inventory
+      - side
+      - ingredient
+      - grocery
+      - bundle_item
+  Image:
+    x-nullable: false
+    type: object
+    title: Image represents image structure.
+    properties:
+      contentType:
+        type: string
+        x-nullable: false
+        example: png
+      id:
+        type: string
+        x-nullable: false
+      resolutions:
+        $ref: "#/definitions/Resolutions"
+  ItemMenuAttributeResponse:
+    description: ItemMenuAttributeResponse is the item menu attribute response
+    type: object
+    x-nullable: false
+    required:
+      - menuId
+      - menuSectionId
+      - menuType
+      - isVariablePrice
+      - price
+      - index
+    properties:
+      index:
+        type: integer
+        format: int64
+        x-nullable: false
+        example: 1
+      isVariablePrice:
+        type: boolean
+        x-nullable: false
+        example: true
+      menuId:
+        type: string
+        x-nullable: false
+        example: 5dfb977429ec145dd6f9c307
+      menuSectionId:
+        type: string
+        x-nullable: false
+        example: 5dfb977429ec145dd6f9c307
+      menuType:
+        $ref: "#/definitions/MenuType"
+      price:
+        type: integer
+        format: int64
+        x-nullable: false
+        example: 10
+  ItemOriginResponse:
+    description: ItemOriginResponse is the response for item origins
+    type: object
+    required:
+      - country
+      - address
+      - city
+      - state
+      - region
+      - source
+    properties:
+      address:
+        type: string
+        x-nullable: false
+        example: Elvira Ferraz
+      city:
+        type: string
+        x-nullable: false
+        example: Sao Paulo
+      country:
+        type: string
+        x-nullable: false
+        example: Brazil
+      region:
+        type: string
+        x-nullable: false
+        example: SP
+      source:
+        $ref: "#/definitions/ItemSourceResponse"
+      state:
+        type: string
+        x-nullable: false
+        example: SP
+  ItemConsumerResponse:
+    description: ItemConsumerResponse is the response for item types
+    x-nullable: false
+    type: object
+    required:
+      - id
+      - description
+      - title
+      - photos
+      - type
+      - category
+      - subcategory
+      - availableFor
+      - applyTaxDeliveryTakeout
+      - sizesAndPrices
+      - createdAt
+      - availability
+      - routing
+      - isAvailable
+    properties:
+      alcoholicAttributes:
+        $ref: "#/definitions/AlcoholicAttributesResponse"
+      beverageAttributes:
+        $ref: "#/definitions/BeverageAttributesResponse"
+      groceryAttributes:
+        $ref: "#/definitions/GroceryAttributesResponse"
+      bundleAttributes:
+        $ref: "#/definitions/BundleAttributesResponse"
+      applyTaxDeliveryTakeout:
+        type: boolean
+        x-nullable: false
+        example: true
+      availability:
+        type: array
+        items:
+          $ref: "#/definitions/AvailabilityResponse"
+      availableFor:
+        type: array
+        items:
+          type: string
+      category:
+        $ref: "#/definitions/ItemType"
+      createdAt:
+        type: string
+        format: date-time
+        x-nullable: false
+        example: "2012-11-01T22:08:41.000Z"
+      description:
+        x-nullable: false
+        type: string
+        example: I like it
+      id:
+        type: string
+        x-nullable: false
+        example: 5dfb977429ec145dd6f9c307
+      venueId:
+        type: string
+        x-nullable: false
+        example: 5dfb977429ec145dd6f9c307
+      includeCountdown:
+        type: boolean
+        example: true
+      origin:
+        $ref: "#/definitions/ItemOriginResponse"
+      photos:
+        type: array
+        items:
+          $ref: "#/definitions/Image"
+      routing:
+        type: array
+        items:
+          type: string
+      sizesAndPrices:
+        type: array
+        items:
+          $ref: "#/definitions/SizeResponse"
+      subcategory:
+        $ref: "#/definitions/ItemSubtype"
+      title:
+        x-nullable: false
+        type: string
+      type:
+        type: array
+        items:
+          $ref: "#/definitions/Facet"
+      updatedAt:
+        type: string
+        format: date-time
+        example: "2012-11-01T22:08:41.000Z"
+      measure:
+        type: string
+        x-nullable: true
+      quantityStep:
+        $ref: "#/definitions/QuantityStep"
+      course:
+        type: integer
+        format: int64
+        example: 1
+        x-nullable: true
+      isAvailable:
+        type: boolean
+        x-nullable: false
+        example: true
+      unavailabilityReason:
+        type: string
+        x-nullable: true
+        example: "not found"
+  QuantityStep:
+    x-nullable: true
+    type: object
+    description: the minimum increment when adding more items
+    required:
+      - quantity
+      - unit
+    properties:
+      quantity:
+        type: number
+        format: float64
+        example: 0.200
+        x-nullable: false
+      unit:
+        type: string
+        example: "mg"
+        x-nullable: false
+  ItemSourceResponse:
+    description: ItemSourceResponse is the response for item source
+    type: object
+    required:
+      - producer
+      - manufacturer
+    properties:
+      manufacturer:
+        type: string
+        x-nullable: false
+        example: Coke
+      producer:
+        type: string
+        x-nullable: false
+        example: Coke
+  ItemSubtype:
+    description: ItemSubtype is an item subcategory type
+    type: string
+    enum:
+      - none
+      - water
+      - juice
+      - smoothie
+      - soda
+      - other
+      - coffee
+      - tea
+      - beer
+      - wine
+      - sake
+      - spirits
+      - corkage
+      - cocktails
+  ItemType:
+    type: string
+    enum:
+      - food
+      - non_alcoholic_beverage
+      - alcoholic_beverage
+      - menu
+      - prepped_food
+      - inventory
+      - side
+      - bundle
+  Measure:
+    type: string
+  MenuType:
+    description: MenuType is the menu type enum
+    type: string
+    enum:
+      - standard
+      - prefix_price
+      - combo
+      - pizza
+  ItemModifierOptionResponse:
+    type: object
+    x-nullable: false
+    required:
+      - available
+      - config
+    properties:
+      available:
+        x-nullable: false
+        type: boolean
+      config:
+        type: array
+        x-nullable: false
+        items:
+          $ref: "#/definitions/ItemModifierOptionConfigResponse"
+  ItemModifierOptionConfigResponse:
+    type: object
+    x-nullable: false
+    required:
+      - itemSizeId
+      - maxRepetition
+      - unit
+      - price
+      - quantity
+    properties:
+      itemSizeId:
+        x-nullable: false
+        type: string
+        example: 5dfb977429ec145dd6f9c307
+      maxRepetition:
+        x-nullable: false
+        type: integer
+        format: int32
+        example: 10
+      unit:
+        type: string
+        x-nullable: true
+        example: gr
+      price:
+        x-nullable: false
+        type: integer
+        format: int64
+        example: 1000
+      quantity:
+        x-nullable: false
+        type: integer
+        format: int32
+        example: 10
+  ModifierType:
+    type: string
+    enum:
+      - side
+      - cooking
+      - ingredient
+      - beverage
+      - custom
+  Money:
+    type: object
+    title: Money is a value and curency.
+    properties:
+      Currency:
+        $ref: "#/definitions/Currency"
+        x-go-name: "OldCurrency"
+      currency:
+        $ref: "#/definitions/Currency"
+      value:
+        type: integer
+        format: int64
+        example: 10
+  NutritionalAttributeRequest:
+    type: object
+    x-nullable: false
+    title: NutritionalAttributeRequest represents the nutritional info and the interaction with UI
+    required:
+      - name
+      - unit
+      - amount
+    properties:
+      amount:
+        type: integer
+        format: int32
+        x-nullable: false
+        example: 10
+      dayPercentage:
+        type: integer
+        format: int32
+        example: 10
+      name:
+        type: string
+        x-nullable: false
+        example: calories
+      subNutritionalAttributes:
+        type: array
+        items:
+          $ref: "#/definitions/NutritionalAttributeRequest"
+      unit:
+        type: string
+        x-nullable: false
+        example: kcal
+  NutritionalAttributeResponse:
+    type: object
+    x-nullable: false
+    title: NutritionalAttributeResponse represents the nutritional info and the interaction with UI.
+    required:
+      - name
+      - unit
+      - amount
+      - dayPercentage
+      - subNutritionalAttributes
+    properties:
+      amount:
+        type: integer
+        x-nullable: false
+        format: int32
+        example: 10
+      dayPercentage:
+        type: integer
+        x-nullable: false
+        format: int32
+        example: 10
+      name:
+        type: string
+        x-nullable: false
+        example: calories
+      subNutritionalAttributes:
+        type: array
+        x-nullable: false
+        items:
+          $ref: "#/definitions/NutritionalAttributeResponse"
+      unit:
+        type: string
+        x-nullable: false
+        example: kcal
+  PeriodResponse:
+    type: object
+    x-nullable: false
+    title: PeriodResponse is the period of availability.
+    required:
+      - from
+      - to
+    properties:
+      from:
+        type: string
+        x-nullable: false
+        example: "2012-11-01T22:08:41.000Z"
+      to:
+        type: string
+        x-nullable: false
+        example: "2012-11-01T22:08:41.000Z"
+  Resolution:
+    type: object
+    title: Resolution represents one specific resolution.
+    properties:
+      height:
+        type: integer
+        format: int64
+        example: 10
+      url:
+        type: string
+        example: "http://amazon.com"
+      width:
+        type: integer
+        format: int64
+        example: 10
+  Resolutions:
+    type: object
+    title: Resolutions represents links with all resolutions for image.
+    properties:
+      default:
+        $ref: "#/definitions/Resolution"
+      high:
+        $ref: "#/definitions/Resolution"
+      low:
+        $ref: "#/definitions/Resolution"
+  SizeResponse:
+    description: SizeResponse is the response for sizes
+    type: object
+    x-nullable: false
+    required:
+      - id
+      - name
+      - menuAttributes
+    properties:
+      id:
+        type: string
+        x-nullable: false
+        example: 5dfb977429ec145dd6f9c307
+      menuAttributes:
+        type: array
+        items:
+          $ref: "#/definitions/ItemMenuAttributeResponse"
+      name:
+        type: string
+        x-nullable: false
+        example: small
+      pizzaAttributes:
+        properties:
+          maximumDivisions:
+            type: number
+            format: int64
+            example: 4
+            description: Maximum pizza divisions
+      comboAttributes:
+        properties:
+          itemsQuantity:
+            type: number
+            format: int64
+            example: 4
+            description: Quantity of items allowed inside combo
+      prixFixeAttributes:
+        properties:
+          foodQuantity:
+            type: number
+            format: int64
+            example: 4
+            description: Quantity of food items allowed inside bundle
+          beverageQuantity:
+            type: number
+            format: int64
+            example: 1
+            description: Quantity of beverage items allowed inside bundle
+      sushiAttributes:
+        properties:
+          itemsQuantity:
+            type: number
+            format: int64
+            example: 20
+            description: Quantity of items allowed inside sushi combo
+      bundleItemSizeAttributes:
+        type: array
+        items:
+          $ref: "#/definitions/ItemBundleItemSizeAttributes"
+      bundleSectionSizeAttributes:
+        type: array
+        items:
+          $ref: "#/definitions/ItemBundleSectionSizeAttributes"
+  Weekday:
+    type: string
+    title: Weekday represents weekday option.
+    enum:
+      - SUNDAY
+      - MONDAY
+      - TUESDAY
+      - WEDNESDAY
+      - THURSDAY
+      - FRIDAY
+      - SATURDAY
+  ItemModifierOptionsResponse:
+    description: Options for itemModifier when listing
+    type: object
+    x-nullable: false
+    required:
+      - id
+      - itemId
+      - sizeId
+      - title
+      - default
+      - itemModifierOption
+    properties:
+      id:
+        type: string
+        x-nullable: false
+      itemId:
+        type: string
+        x-nullable: false
+      sizeId:
+        type: string
+        x-nullable: false
+      title:
+        type: string
+        x-nullable: false
+      default:
+        type: boolean
+        x-nullable: false
+      itemModifierOption:
+        $ref: "#/definitions/ItemModifierOptionResponse"
+        x-nullable: false
+  ItemModifierResponse:
+    type: object
+    x-nullable: false
+    required:
+      - id
+      - index
+      - mandatory
+      - pricingOption
+      - pricing
+    properties:
+      id:
+        type: string
+        x-nullable: true
+      index:
+        type: integer
+        x-nullable: false
+        format: int32
+        example: 1
+      mandatory:
+        type: boolean
+        x-nullable: false
+      pricingOption:
+        type: string
+        x-nullable: false
+        enum: [custom, per_option, free]
+      pricing:
+        type: array
+        items:
+          $ref: "#/definitions/PricingResponse"
+  PricingResponse:
+    type: object
+    x-nullable: false
+    required:
+      - chosenOptionsUpTo
+      - sizePrices
+    properties:
+      chosenOptionsUpTo:
+        type: integer
+        x-nullable: false
+        format: int32
+        example: 1
+      sizePrices:
+        type: array
+        items:
+          $ref: "#/definitions/SizePricesResponse"
+  SizePricesResponse:
+    type: object
+    x-nullable: false
+    required:
+      - itemSizeID
+      - price
+    properties:
+      itemSizeID:
+        type: string
+        x-nullable: false
+        example: 5dfb977429ec145dd6f9c307
+      price:
+        type: integer
+        format: int64
+        x-nullable: false
+        example: 1000
+  GrapeResponse:
+    type: object
+    x-nullable: false
+    properties:
+      type:
+        type: string
+        example: "purple grape"
+      percentage:
+        type: integer
+        example: 50
+  PackageResponse:
+    type: object
+    properties:
+      label:
+        type: string
+        example: "blue"
+      group:
+        type: string
+        example: "nostradamus"
+      unit:
+        type: string
+        example: "purple grape"
+      quantityPerUnit:
+        type: number
+        example: 2
+  BundleType:
+    description: BundleType represents all possible bundle types.
+    type: string
+    enum:
+      - prix_fixe
+      - combo
+      - multicategory_combo
+      - sushi
+      - multiflavor_pizza
+  BundleItemResponse:
+    properties:
+      id:
+        description: ID of the bundle item
+        example: 5ef59e4058bebfab19ef000e
+        type: string
+      itemId:
+        description: Item ID that will be part of this bundle
+        example: 5ef59e4058bebfab19ef000e
+        type: string
+      sizeId:
+        description: Size ID of the item that will be part of this bundle.
+        example: 5ef59e4058bebfab19ef000e
+        type: string
+    x-nullable: false
+  BundleAttributesResponse:
+    properties:
+      type:
+        $ref: "#/definitions/BundleType"
+      items:
+        description: Array of bundle items in the root of the bundle.
+        type: array
+        items:
+          $ref: "#/definitions/BundleItemResponse"
+      sections:
+        description: Array of bundle section in the root of the bundle.
+        type: array
+        items:
+          $ref: "#/definitions/ItemBundleSectionResponse"
+  ExtraPrice:
+    description: Extra price of a bundle item.
+    type: object
+    x-nullable: true
+    required:
+      - currency
+      - value
+    properties:
+      currency:
+        $ref: "#/definitions/Currency"
+      value:
+        type: integer
+        format: int64
+        example: 10
+  ItemBundleSectionResponse:
+    type: object
+    description: returns info about certaion bundle section in item response.
+    x-nullable: false
+    properties:
+      id:
+        type: string
+        x-omitempty: false
+        example: 5dfb977429ec145dd6f9c307
+      name:
+        type: string
+        x-omitempty: false
+        example: main dish
+      course:
+        type: integer
+        x-nullable: true
+        format: int64
+        example: 1
+      items:
+        description: Array of bundle items inside a section of the bundle
+        type: array
+        items:
+          $ref: "#/definitions/BundleItemResponse"
+  ItemBundleItemSizeAttributes:
+    x-nullable: false
+    properties:
+      bundleItemId:
+        type: string
+        x-omitempty: false
+        example: 5dfb977429ec145dd6f9c307
+      maximumQuantity:
+        type: integer
+        x-nullable: false
+        format: int64
+        example: 1
+      extraPrice:
+        $ref: "#/definitions/ExtraPrice"
+  ItemBundleSectionSizeAttributes:
+    x-nullable: false
+    properties:
+      bundleSectionId:
+        type: string
+        x-omitempty: false
+        example: 5dfb977429ec145dd6f9c307
+      defaultQuantity:
+        type: integer
+        x-nullable: true
+        format: int64
+        example: 5
+      maximumQuantity:
+        type: integer
+        x-nullable: true
+        format: int64
+        example: 10
+      minimumQuantity:
+        type: integer
+        x-nullable: true
+        format: int64
+        example: 2

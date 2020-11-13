@@ -1,0 +1,571 @@
+consumes:
+  - application/json
+produces:
+  - application/json
+schemes:
+  - http
+  - https
+swagger: '2.0'
+info:
+  description: 'The purpose of this application is to search dishes, menus and venues'
+  title: Rockspoon Search Microservice
+  version: 0.0.1
+host: dev-api.rockspoon.io
+basePath: /search
+paths:
+  /composed:
+    post:
+      description: Unscoped composed Search - This search is able to get tags, items and venues. This will return only PUBLIC entities like menu-items or venues.
+      consumes:
+        - application/json
+      produces:
+        - application/json
+      tags:
+        - Item,Venue,Tags
+      operationId: unscopedComposedSearch
+      parameters:
+        - name: body
+          in: body
+          description: Represents the type of document searched
+          schema:
+            $ref: '#/definitions/SearchRequest'
+      responses:
+        '200':
+          description: Search Results
+          schema:
+            type: array
+            items:
+              $ref: '#/definitions/SearchResponse'
+        '400':
+          description: Bad Request
+        '500':
+          description: Internal server error
+definitions:
+  LocationResponse:
+    description: LocationResponse is the location of the restaurant for the item
+    type: object
+    x-nullable: true
+    properties:
+      distance:
+        type: number
+        format: double
+        x-go-name: Distance
+        description: Distance in meters from the user informed location to the restaurant
+        example: 3.22
+      latitude:
+        type: number
+        format: double
+        x-go-name: Latitude
+        description: Latitude of the restaurant
+        example: -46.21223
+      longitude:
+        type: number
+        format: double
+        x-go-name: Longitude
+        description: Longitude of the restaurant
+        example: -23.12344
+  SearchRequest:
+    description: search request parameters
+    type: object
+    properties:
+      entity:
+        type: string
+        description: represents the type of documents to be searched
+        enum:
+          - venue
+          - item
+          - venueTag
+          - itemTag
+          - availableTags
+      page:
+        type: number
+        description: page of the results
+        example: 2
+      size:
+        type: number
+        description: number of results per page
+        example: 10
+      params:
+        $ref: '#/definitions/SearchParams'
+  SearchParams:
+    description: search parameters
+    type: object
+    properties:
+      tags:
+        type: array
+        description: tags related to the entity to be searched. in an "item" or "venue" search this will limit the returning entities to only those that have this facets(tags), on a "tag" search this will restrict the returned tags will be only the ones that appears in items together with those
+        example: ["bar", "gourmet", "pizza"]
+        items:
+          type: string
+      strictTags:
+        type: array
+        description: This field is used to filter tags. For example, when requesting itemTags, we will have something like cuisines>italian[2 matches], cuisines>mediterranean[1 match], diets>no_peanuts[1 match]. If you want to receive only tags with cuisines>, that is the place to set the filtering info
+        example: ["cuisines>"]
+        items:
+          type: string
+      strictPaginatedTags:
+        type: array
+        description: This field is used to filter tags, as the strictTags. But this one allows you to paginate for which type of tag you want. If this field is set, strictTags will be ignored.
+        items:
+          $ref: '#/definitions/StrictPaginatedTag'
+      location:
+        $ref: '#/definitions/Location'
+      term:
+        type: array
+        description: term (text) to be found in name, description, ingredients or any other text based property of the searched entity
+        example:  ["jose", "ribs"]
+        items:
+          type: string
+      restrictions:
+        $ref: '#/definitions/RestrictionsParams'
+      returnConditions:
+        $ref: '#/definitions/ReturnConditionsParams'
+      itemProperties:
+        $ref: '#/definitions/ItemPropertiesParams'
+  StrictPaginatedTag:
+    x-nullable: false
+    description: Allows users filter by strict tags and paginate different ones
+    type: object
+    required:
+      - value
+      - page
+      - pageSize
+    properties:
+      value:
+        type: string
+        example: cuisines>
+      page:
+        type: integer
+        example: 1
+      pageSize:
+        type: integer
+        example: 10
+  RestrictionsParams:
+    description: Restrictions to be applied in search to filter potential results
+    type: object
+    properties:
+      maxDistance:
+        type: number
+        x-nullable: true
+        description: maxDistance between the user and the result ( in case of items is the distance between the user and the venue that provides this item) in meters
+        example: 3
+      venueIds:
+        type: array
+        description: venueIds to restrict the search
+        example:  ["b1238032f123", "8bfd556a993"]
+        items:
+          type: string
+      itemIds:
+        type: array
+        description: itemIds to restrict the search
+        example:  ["b1238032f123", "8bfd556a993"]
+        items:
+          type: string
+      fromRating:
+        type: number
+        description: minimum rating of the item or venue searched (itself included)
+        example: 1
+        x-nullable: true
+      toRating:
+        type: number
+        description: maximum rating of the item or venue searched (itself included)
+        example: 5
+        x-nullable: true
+      fromPrice:
+        type: number
+        description: minimum price of the item or mean price of the venue
+        example: 1990
+        x-nullable: true
+      toPrice:
+        type: number
+        description: maximum price of the item or mean price of the venue
+        example: 3590
+        x-nullable: true
+      fromPriceLevel:
+        type: number
+        description: minimum price level of the venues included on the search (itself included)
+        example: 1
+        x-nullable: true
+      toPriceLevel:
+        type: number
+        description: maximum price level of the venues included on the search (itself included)
+        example: 3
+        x-nullable: true
+  ReturnConditionsParams:
+    description: Configuration to formating the returned documents
+    type: object
+    properties:
+      image:
+        type: string
+        description: resolution of the image URLs returned. Ignored if not applicable defaults to "mid"
+        enum:
+          - low
+          - mid
+          - high
+      currency:
+        type: string
+        description: currency used in both request and return
+        enum:
+          - USD
+      relatedData:
+        type: boolean
+        description: If available related data of other entities should be returned. Ex. in item searches means returning related venue data like restaurantName, location and distance in the venues array, in tag search this would return the top matching items as well as teh requested tags. defaults to FALSE
+        example: false
+      minimumData:
+        type: boolean
+        description: If set to true returns only IDs, titles and tags of the items or venues. defaults to FALSE
+        example: false
+      pagination:
+        type: boolean
+        description: Defines either the response should return pagination data or not. defaults to TRUE
+        example: true
+      sorting:
+        type: object
+        description: sort returned data based on specified parameters
+        properties:
+          field:
+            type: string
+            description: field by which the sorting will be performed
+            enum:
+              - name
+              - createdAt
+              - updatedAt
+          ascendingOrder:
+            type: boolean
+            description: toggle ascending sort (descending by default)
+  ItemPropertiesParams:
+    description: Restrictions to be applied on the items related to the search. Ex. in an venue search it would return only venues that have items inside the range of those parameters
+    type: object
+    properties:
+        fromPrice:
+          type: number
+          description: Minimum price (>=) of the related items in cents
+          x-nullable: true
+        toPrice:
+          type: number
+          description: Maximum price (<=) of the related items in cents
+          x-nullable: true
+        minimumRating:
+          type: number
+          description: Minimum rating (>=) of the related items
+          x-nullable: true
+          format: int
+        fromCalories:
+          type: number
+          description: Minimum calories (>=) of the related items in kcal
+          x-nullable: true
+        toCalories:
+          type: number
+          description: Maximum calories (<=) of the related items in kcal
+          x-nullable: true
+        fromProtein:
+          type: number
+          description: Minimum Protein (>=) of the related items in grams
+          x-nullable: true
+        toProtein:
+          type: number
+          description: Maximum Protein (<=) of the related items in grams
+          x-nullable: true
+        fromCarbs:
+          type: number
+          description: Minimum Carbs (>=) of the related items in grams
+          x-nullable: true
+        toCarbs:
+          type: number
+          description: Maximum Carbs (<=) of the related items in grams
+          x-nullable: true
+        fromSodium:
+          type: number
+          description: Minimum Sodium (>=) of the related items in grams
+          x-nullable: true
+        toSodium:
+          type: number
+          description: Maximum Sodium (<=) of the related items in grams
+          x-nullable: true
+        facet:
+          type: array
+          description: Type of items searched. Unscoped searches are only able to access menu items
+          items:
+            type: string
+            x-nullable: false
+            enum:
+              - menu
+              - prepped_food
+              - inventory
+              - side
+              - ingredient
+        sectionIds:
+          type: array
+          description: limits search to look only for items that have specified sectionIds
+          example:  ["5e9eba55bace8dd6c13ef4c3", "5e9eba55bace8dd6c13ef4c4"]
+          items:
+            type: string
+        availableFor:
+          type: array
+          description:  limits search to look only for items that have specified availability types
+          example:  ["dinein", "grocery"]
+          items:
+            type: string
+            enum:
+              - dinein
+              - grocery
+              - delivery
+              - takeout
+              - catering
+              - curbside
+        menuIds:
+          type: array
+          description: limits returned items to ones that have are from specified menus
+          example:  ["5e9eba55bace8dd6c13ef4c3", "5e9eba55bace8dd6c13ef4c4"]
+          items:
+            type: string
+  Location:
+    description: defines a location using latitude and longitude
+    type: object
+    required:
+      - latitude
+      - longitude
+    properties:
+      latitude:
+        type: number
+        format: double
+        x-go-name: Latitude
+        description: Latitude of the restaurant
+        example: -46.21223
+      longitude:
+        type: number
+        format: double
+        x-go-name: Longitude
+        description: Longitude of the restaurant
+        example: -23.12344
+  TagEntitySearchResult:
+    description: Tag structure
+    type: object
+    properties:
+      name:
+        type: string
+        description: tag name
+        example: bar
+      type:
+        type: string
+        description: tag type
+      matches:
+        type: integer
+        description: number of items that have that tag
+  ItemEntitySearchResponse:
+    description: item structure
+    type: object
+    properties:
+      availableFor:
+        type: array
+        items:
+          type: string
+          enum:
+            - dinein
+            - takeout
+            - delivery
+            - catering
+            - curbside
+        x-go-name: AvailableFor
+        x-omitempty: true
+        example:
+          - dinein
+      id:
+        type: string
+        x-go-name: ID
+        x-nullable: false
+        description: ID of the item
+        example: 5dd29eb8a06107fa0f4b72cc
+        x-omitempty: false
+      venueId:
+        type: string
+        description: ID of the venue responsible for the item
+        example: 5dd29eb8a06107fa0f4b72cc
+        x-omitempty: true
+      location:
+        x-omitempty: true
+        $ref: '#/definitions/LocationResponse'
+      rating:
+        x-omitempty: true
+        type: number
+        example:  4.96
+      menuId:
+        x-omitempty: true
+        type: string
+        x-go-name: MenuID
+        x-nullable: false
+        description: ID of the menu the item belongs to
+        example: 5dd29eb8a06107fa0f4b72cc
+      name:
+        x-omitempty: false
+        type: string
+        x-go-name: Name
+        x-nullable: false
+        description: Item name
+        example: Spaghetti
+      photo:
+        x-omitempty: true
+        type: string
+        x-go-name: Photo
+        x-nullable: false
+        description: URL of the photo in the resolution requested
+        example: www.example.com/image.png
+      prices:
+        x-omitempty: true
+        type: array
+        description: prices assosiated with the item
+        items:
+          $ref: '#/definitions/Money'
+      tags:
+        x-omitempty: false
+        type: array
+        description: Tags related to this item
+        items:
+          $ref: '#/definitions/TagEntitySearchResult'
+      restaurantName:
+        x-omitempty: true
+        type: string
+        x-go-name: RestaurantName
+        x-nullable: false
+        description: Name of the restaurant the item belongs to
+        example: Thyme
+      sectionIds:
+        x-omitempty: true
+        type: array
+        x-go-name: SectionIds
+        items:
+          type: string
+          example: "5dd29eb8a06107fa0f4b72cc"
+  Money:
+    description: price in needed currency
+    type: object
+    x-nullable: false
+    properties:
+      amount:
+        type: integer
+        description: value represented
+        example: 1990
+      currency:
+        $ref: '#/definitions/Currency'
+  Currency:
+    description: Needed parameters to describes a currency
+    type: object
+    x-nullable: false
+    properties:
+      type:
+        type: string
+        description: the currency name
+        example: USD
+      symbol:
+        type: string
+        description: symbol used to represent the currency
+        example: $
+      decimal:
+        type: integer
+        description: how many digits after the floating point should exist
+        example: 2
+  VenueEntitySearchResult:
+    description: Contains an venue from elastic search results.
+    type: object
+    properties:
+      location:
+        x-omitempty: true
+        $ref: '#/definitions/LocationResponse'
+      name:
+        type: string
+        example: Old John's Burguers
+      availableFor:
+        x-omitempty: true
+        type: array
+        items:
+          type: string
+          example: "dinein"
+      id:
+        type: string
+        example: 5dd29eb8a06107fa0f4b72cc
+      description:
+        x-omitempty: true
+        type: string
+        example: Welcome to Goodburguer, home of the world's good burguer.
+      rating:
+        x-omitempty: true
+        type: number
+        example:  4.96
+      photo:
+        x-omitempty: true
+        type: string
+        example: http://tiny.cc/ynmamz
+      price:
+        x-omitempty: true
+        type: number
+        description: mean price of the meal
+        format: integer
+        example: 1980
+      tags:
+        type: array
+        description: Tags related to this venue
+        items:
+          $ref: '#/definitions/TagEntitySearchResult'
+      openNow:
+          x-omitempty: false
+          type: boolean
+          description: Indicates if venue is open
+      minPrice:
+        x-omitempty: false
+        $ref: '#/definitions/Money'
+        description: min price of any meal in the venue
+      maxPrice:
+        x-omitempty: false
+        $ref: '#/definitions/Money'
+        description: max price of any meal in the venue
+  ResultsObject:
+    description: Holder structure for items, venues and tags found in the search
+    type: object
+    properties:
+      venues:
+        type: array
+        description: venue data resulting from search
+        items:
+          $ref: '#/definitions/VenueEntitySearchResult'
+      items:
+        type: array
+        description: items data resulting from search
+        items:
+          $ref: '#/definitions/ItemEntitySearchResponse'
+      tags:
+        type: array
+        description: tags data resulting from search
+        items:
+          $ref: '#/definitions/TagEntitySearchResult'
+      availableTags:
+        type: array
+        description: only available tags filtering by tags
+        items:
+            type: string
+  SearchResponse:
+    description: Result of a search
+    type: object
+    properties:
+      entity:
+        type: string
+        description: represents the type of documents that were requested
+        enum:
+          - venue
+          - item
+          - venueTag
+          - itemTag
+          - availableTags
+      page:
+        type: number
+        description: page of the results
+        example: 2
+      total:
+        type: number
+        description: total number of search results
+        example: 10
+      results:
+        $ref: '#/definitions/ResultsObject'
+      hasNext:
+        type: boolean
+        x-omitempty: false
+        description: if there is an next page for the same request
